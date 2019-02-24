@@ -1,0 +1,185 @@
+var board = [];
+var cobra = [];
+var intervalo;
+var width = 20;
+var height = 20;
+var size = width * height;
+var velo = 300;
+var dir = 40;
+var maca;
+
+for (var i=0; i < size; i++) {
+    board[i] = {id: i, status: 'dead'};
+}
+maca=350;
+cobra[0]=62;
+cobra[1]=61;
+cobra[2]=60;
+
+for (var i=0; i < cobra.length; i++) {
+    board[cobra[i]] = {id: cobra[i], status: 'alive'};
+}
+board[maca] = {id: maca, status:'maca'}
+                   
+var Arena = React.createClass({
+  turn: function() {
+    this.props.turn(this.props.id);
+  },
+  render: function() {
+    return <div id={this.props.id}   className={this.props.status}></div>
+  }
+});
+
+var JogoCobra = React.createClass({  
+   
+  getInitialState: function() {    
+    return {
+      board: board,
+      dir: dir,
+      cobra: cobra,
+      visao: 1
+    };
+  },
+  
+  move: function() {
+    var dir = this.state.dir;
+    var board = this.state.board;
+    var newBoard = board;
+    var novacabeca;
+    var ultimo = cobra[cobra.length -1];
+    if(dir == 37){
+      novacabeca = cobra[0]-1;
+      if(novacabeca % width == width - 1){return this.clear();}
+    }
+    if(dir == 39){
+      novacabeca = cobra[0]+1;
+      if(novacabeca % width == 0){ return this.clear();}
+    }
+    if(dir == 40){
+      novacabeca = cobra[0]+width;
+      if(novacabeca>size-1){return this.clear();}
+    }
+    if(dir == 38){
+      novacabeca = cobra[0] - width;
+      if(novacabeca<-1)
+      {return this.clear();}
+    }
+    if(novacabeca==maca){
+      this.aumentarcobra();
+    }
+    cobra.pop();
+    cobra.unshift(novacabeca);
+    if(dir!=0)newBoard[ultimo] = {id: ultimo, status: 'dead'};
+    board[maca] = {id: maca, status: 'maca' };
+    newBoard[novacabeca] = {id: novacabeca, status: 'alive'};
+    
+    for (var i=1; i < cobra.length; i++){
+      if(novacabeca==cobra[i]){   
+    return this.clear();
+      }
+    }
+    
+    this.setState({board: newBoard,
+                  dir: dir,
+                  visao: 2,      
+                  pontuacao: cobra.length - 3});
+    
+  },
+  
+    setDirection({ keyCode }) {
+    let difdir = true;
+    [[38, 40], [37, 39]].forEach(dir => {
+      if (dir.indexOf(this.state.dir) > -1 && dir.indexOf(keyCode) > -1) {
+        difdir = false;
+      }
+    });
+      
+    if (difdir) this.setState({ dir: keyCode });
+  },
+  
+  aumentarcobra: function(){
+      board[cobra[cobra.length -1]] = {id: cobra[cobra.length -1], status: 'alive'};
+      cobra.push(cobra[cobra.length -1]);
+      maca = Math.floor(Math.random() * (size));
+  }, 
+  
+  iniciar: function() {
+    
+    this.setState({
+     visao: 2
+   });
+    
+    intervalo = setInterval(this.move, velo);
+  },
+  
+  reiniciar: function(){
+    this.setState({
+     dir: 40,
+   });
+  },
+  
+  clear: function() {
+    
+    var newBoard = [];
+    var newCobra = [];
+    newCobra[0]=62;
+    newCobra[1]=61;
+    newCobra[2]=60;
+    var newMaca = 350;
+    
+    maca = newMaca;
+    cobra = [];
+    cobra = newCobra;
+    
+    for (var i=0; i<size; i++) {
+	  newBoard[i] = {id: i, status: 'dead'};
+    }
+    
+    for(var i=0; i<newCobra.length; i++){
+      newBoard[newCobra[i]] = {id: newCobra[i], status: 'alive'};
+    }
+    
+    newBoard[newMaca] = {id: newMaca, status: 'maca'};
+    dir=37;
+    
+   this.setState({
+     board: newBoard,
+     cobra: newCobra,
+     maca: newMaca,
+     dir: dir,
+     visao: 3
+   });
+    
+  },
+
+  render: function() {
+    var squares = this.state.board.map(function(item){
+      return <Arena id={item.id} status={item.status}/>
+    }.bind(this));
+    
+
+    return (
+      <div>
+        <h1 className="nomejogo">Jogo da Cobrinha</h1>
+        <p className="by">por </p><p className="Karol"> Karol Borges</p>
+        <a href="https://en.wikipedia.org/wiki/Snake_(video_game_genre)" target="_blank" className="infoBtn btn btn-default">Sobre</a>
+        {document.onkeydown = this.setDirection}
+        <div className='boardContainer'>{squares}</div>
+ {(this.state.visao == 1) && 
+        <button className="botao" onClick={this.iniciar}>Iniciar Jogo</button>}
+        {(this.state.visao == 2) &&
+        <div className="botao">Pontuação: {this.state.pontuacao}</div>}
+        {(this.state.visao == 3)&& 
+        <div><div className="telaGameOver"><h1 className="gameover">FIM DE JOGO</h1>
+            <p>Sua pontuação foi: {this.state.pontuacao}</p></div>
+          <button className="botao" onClick={this.reiniciar}>Reiniciar JOGO</button></div>
+        }
+        
+       
+
+      </div>
+    );
+  }
+});
+
+ReactDOM.render(<JogoCobra/>,document.getElementById('app'));
